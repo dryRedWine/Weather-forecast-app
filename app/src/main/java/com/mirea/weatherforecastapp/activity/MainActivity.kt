@@ -1,6 +1,7 @@
 package com.mirea.weatherforecastapp.activity
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
@@ -22,6 +23,8 @@ import com.mirea.weatherforecastapp.viewmodel.WeatherViewModel
 import eightbitlab.com.blurview.RenderScriptBlur
 import retrofit2.Call
 import retrofit2.Response
+import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.util.Calendar
 
 class MainActivity : AppCompatActivity() {
@@ -29,6 +32,13 @@ class MainActivity : AppCompatActivity() {
     private val weatherViewModel: WeatherViewModel by viewModels()
     private val calendar by lazy { Calendar.getInstance() }
     private val forecastAdapter by lazy { ForecastAdapter() }
+    private val sharedPreferences by lazy {
+        getSharedPreferences(
+            "weather_prefs",
+            Context.MODE_PRIVATE
+        )
+    }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,15 +52,10 @@ class MainActivity : AppCompatActivity() {
 
 
         binding.apply {
-            var lat = intent.getDoubleExtra("lat", 0.0)
-            var lon = intent.getDoubleExtra("lon", 0.0)
-            var name = intent.getStringExtra("name")
+            var lat = sharedPreferences.getFloat("lat", 0.0f)
+            var lon = sharedPreferences.getFloat("lon", 0.0f)
+            var name = sharedPreferences.getString("name","")
 
-            if (lat == 0.0 || lon == 0.0) {
-                lat = 55.7504461
-                lon = -37.6174943
-                name = "Moscow"
-            }
 
 
             addCity.setOnClickListener {
@@ -59,7 +64,7 @@ class MainActivity : AppCompatActivity() {
             //current temperature
             cityTxt.text = name
             progressBar.visibility = View.VISIBLE
-            weatherViewModel.loadCurrentWeather(lat, lon, "metric").enqueue(object :
+            weatherViewModel.loadCurrentWeather(lat.toDouble(), lon.toDouble(), "metric").enqueue(object :
                 retrofit2.Callback<CurrentWeatherResponseApi> {
                 @SuppressLint("SetTextI18n")
                 override fun onResponse(
@@ -71,40 +76,43 @@ class MainActivity : AppCompatActivity() {
                         progressBar.visibility = View.GONE
                         detailLayout.visibility = View.VISIBLE
 
-                        data?.let {
-                            statusTxt.text = it.weather?.get(0)?.main ?: "-"
-                            humidityTxt.text = it.main?.humidity?.toString() + "%"
-                            windTxt.text = it.wind?.speed.let {
-                                it?.let { it1 ->
-                                    Math.round(it1).toString()
-                                }
-                            } + "Km"
-                            currentTempTxt.text = it.main?.temp.let {
-                                it?.let { it1 ->
-                                    Math.round(it1).toString()
-                                }
-                            } + "°"
-                            maxTempTxt.text = it.main?.tempMax.let {
-                                it?.let { it1 ->
-                                    Math.round(it1).toString()
-                                }
-                            } + "°"
-                            minTempTxt.text = it.main?.tempMin.let {
-                                it?.let { it1 ->
-                                    Math.round(it1).toString()
-                                }
-                            } + "°"
+                        if (lat == 0.0f || lon == 0.0f) {
+                            loadData()
+                        } else {
+                            data?.let {
+                                statusTxt.text = it.weather?.get(0)?.main ?: "-"
+                                humidityTxt.text = it.main?.humidity?.toString() + "%"
+                                windTxt.text = it.wind?.speed.let {
+                                    it?.let { it1 ->
+                                        Math.round(it1).toString()
+                                    }
+                                } + "Km"
+                                currentTempTxt.text = it.main?.temp.let {
+                                    it?.let { it1 ->
+                                        Math.round(it1).toString()
+                                    }
+                                } + "°"
+                                maxTempTxt.text = it.main?.tempMax.let {
+                                    it?.let { it1 ->
+                                        Math.round(it1).toString()
+                                    }
+                                } + "°"
+                                minTempTxt.text = it.main?.tempMin.let {
+                                    it?.let { it1 ->
+                                        Math.round(it1).toString()
+                                    }
+                                } + "°"
 
-                            val drawable = if (isNightNow()) R.drawable.night_bg
-                            else {
-                                setDynamicallyWallpaper(it.weather?.get(0)?.icon ?: "-")
+                                val drawable = if (isNightNow()) R.drawable.night_bg
+                                else {
+                                    setDynamicallyWallpaper(it.weather?.get(0)?.icon ?: "-")
+                                }
+                                bgImage.setImageResource(drawable)
+                                setEffectRainSnow(it.weather?.get(0)?.icon ?: "-")
+
+                                saveData(it)
                             }
-                            bgImage.setImageResource(drawable)
-                            setEffectRainSnow(it.weather?.get(0)?.icon ?: "-")
-
-
                         }
-
                     }
                 }
 
@@ -114,7 +122,7 @@ class MainActivity : AppCompatActivity() {
             })
 
             //settings blur view
-            var radius = 10f
+            var radius = 8f
             val decorView = window.decorView
             val rootView = (decorView.findViewById(android.R.id.content) as ViewGroup?)
             val windowBackground = decorView.background
@@ -130,7 +138,7 @@ class MainActivity : AppCompatActivity() {
 
 
             //forecast temp
-            weatherViewModel.loadFiveDaysForecast(lat, lon, "metric")
+            weatherViewModel.loadFiveDaysForecast(lat.toDouble(), lon.toDouble(), "metric")
                 .enqueue(object : retrofit2.Callback<FiveDaysForecastResponseApi> {
                     override fun onResponse(
                         call: Call<FiveDaysForecastResponseApi>,
@@ -143,6 +151,7 @@ class MainActivity : AppCompatActivity() {
                             data?.let {
                                 forecastAdapter.differ.submitList(it.list)
                                 forecastView.apply {
+                                    visibility = View.VISIBLE
                                     layoutManager = LinearLayoutManager(
                                         this@MainActivity,
                                         LinearLayoutManager.HORIZONTAL,
@@ -161,9 +170,55 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun saveData(data: CurrentWeatherResponseApi) {
+        sharedPreferences.edit().apply {
+
+            putString("weather_main", data.weather?.get(0)?.main)
+            putInt("humidity", data.main?.humidity ?: 0)
+            putFloat("wind_speed", data.wind?.speed?.toFloat() ?: 0f) // Конвертируем в Float
+            putFloat("temp", data.main?.temp?.toFloat() ?: 0f) // Конвертируем в Float
+            putFloat("temp_max", data.main?.tempMax?.toFloat() ?: 0f) // Конвертируем в Float
+            putFloat("temp_min", data.main?.tempMin?.toFloat() ?: 0f) // Конвертируем в Float
+            putString("weather_icon", data.weather?.get(0)?.icon)
+        }.apply()
+
+        Toast.makeText(this, "Data saved", Toast.LENGTH_SHORT).show()
+
+    }
+
+    private fun loadData() {
+        val weatherMain = sharedPreferences.getString("weather_main", "-")
+        val humidity = sharedPreferences.getInt("humidity", 0)
+        val windSpeed = sharedPreferences.getFloat("wind_speed", 0f)
+        val temp = sharedPreferences.getFloat("temp", 0f)
+        val tempMax = sharedPreferences.getFloat("temp_max", 0f)
+        val tempMin = sharedPreferences.getFloat("temp_min", 0f)
+        val weatherIcon = sharedPreferences.getString("weather_icon", "-")
+
+        binding.statusTxt.text = weatherMain ?: "-"
+        binding.humidityTxt.text = "$humidity%"
+        binding.windTxt.text = "${Math.round(windSpeed)}Km"
+        binding.currentTempTxt.text = "${Math.round(temp)}°"
+        binding.maxTempTxt.text = "${Math.round(tempMax)}°"
+        binding.minTempTxt.text = "${Math.round(tempMin)}°"
+
+        val drawable = if (isNightNow()) R.drawable.night_bg
+        else {
+            setDynamicallyWallpaper(weatherIcon ?: "-")
+        }
+        binding.bgImage.setImageResource(drawable)
+        setEffectRainSnow(weatherIcon ?: "-")
+    }
+
+
     private fun isNightNow(): Boolean {
         return calendar.get(Calendar.HOUR_OF_DAY) >= 18
     }
+//    private fun isNightNow(timeZone: Int?): Boolean {
+//        val zonedDateTime = ZonedDateTime.now(ZoneId.of(timeZone.toString()))
+//        val hour = zonedDateTime.hour
+//        return hour >= 18
+//    }
 
     private fun setDynamicallyWallpaper(icon: String): Int {
         return when (icon.dropLast(1)) {

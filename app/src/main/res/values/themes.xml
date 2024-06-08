@@ -8,4 +8,5 @@
     <style name="Theme.WeatherForecastApp" parent="Base.Theme.WeatherForecastApp">
         <item name="android:windowTranslucentNavigation">true</item>
     </style>
+
 </resources>

@@ -2,12 +2,11 @@ package com.mirea.weatherforecastapp.activity
 
 import android.graphics.Color
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
 import android.view.View
 import android.view.WindowManager
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SearchView
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.mirea.weatherforecastapp.adapter.CityListAdapter
 import com.mirea.weatherforecastapp.databinding.AcivityCityListBinding
@@ -19,7 +18,7 @@ import retrofit2.Response
 
 class CityListActivity : AppCompatActivity() {
 
-    lateinit var binding: AcivityCityListBinding
+    private lateinit var binding: AcivityCityListBinding
     private val cityAdapter by lazy { CityListAdapter() }
     private val cityViewModel: CityViewModel by viewModels()
 
@@ -34,43 +33,49 @@ class CityListActivity : AppCompatActivity() {
         }
 
         binding.apply {
-            cityEdit.addTextChangedListener(object : TextWatcher {
-                override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
-
+            searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+                override fun onQueryTextSubmit(query: String?): Boolean {
+                    return false
                 }
 
-                override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
-                }
+                override fun onQueryTextChange(newText: String?): Boolean {
+                    newText?.let { query ->
+                        progressBar2.visibility = View.VISIBLE
+                        cityViewModel.loadCitiesList(query, 10)
+                            .enqueue(object : Callback<CityResponseApi> {
+                                override fun onResponse(
+                                    call: Call<CityResponseApi>,
+                                    response: Response<CityResponseApi>
+                                ) {
+                                    if (response.isSuccessful) {
+                                        val data = response.body()
+                                        data?.let {
+                                            progressBar2.visibility = View.GONE
+                                            cityAdapter.differ.submitList(it)
+                                            if (it.isEmpty()) {
+                                                progressBar2.visibility = View.GONE
+                                                textNoResults.visibility = View.VISIBLE
+                                            }
 
-                override fun afterTextChanged(s: Editable?) {
-                    progressBar2.visibility = View.VISIBLE
-                    cityViewModel.loadCitiesList(s.toString(), 10)
-                        .enqueue(object : Callback<CityResponseApi> {
-                            override fun onResponse(
-                                call: Call<CityResponseApi>,
-                                response: Response<CityResponseApi>
-                            ) {
-                                if (response.isSuccessful) {
-                                    val data = response.body()
-                                    data?.let {
-                                        progressBar2.visibility = View.GONE
-                                        cityAdapter.differ.submitList(it)
-                                        cityView.apply {
-                                            layoutManager = LinearLayoutManager(
-                                                this@CityListActivity,
-                                                LinearLayoutManager.HORIZONTAL,
-                                                false
-                                            )
-                                            adapter = cityAdapter
+                                            cityView.apply {
+                                                layoutManager = LinearLayoutManager(
+                                                    this@CityListActivity,
+                                                    LinearLayoutManager.VERTICAL,
+                                                    false
+                                                )
+                                                adapter = cityAdapter
+                                            }
                                         }
                                     }
                                 }
-                            }
 
-                            override fun onFailure(call: Call<CityResponseApi>, t: Throwable) {
-
-                            }
-                        })
+                                override fun onFailure(call: Call<CityResponseApi>, t: Throwable) {
+                                    progressBar2.visibility = View.GONE
+                                    textError.visibility = View.VISIBLE
+                                }
+                            })
+                    }
+                    return true
                 }
             })
         }

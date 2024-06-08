@@ -26,13 +26,13 @@
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="1.0" />
+        app:layout_constraintVertical_bias="0.0" />
 
     <ImageView
         android:id="@+id/addCity"
         android:layout_width="40dp"
         android:layout_height="55dp"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="52dp"
         android:layout_marginEnd="32dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -42,14 +42,14 @@
         android:id="@+id/cityTxt"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="110dp"
+        android:layout_marginTop="120dp"
         android:shadowColor="@color/black"
         android:shadowDx="1"
         android:shadowDy="1"
         android:shadowRadius="3"
         android:text="-"
         android:textColor="@color/white"
-        android:textSize="16sp"
+        android:textSize="26sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -113,7 +113,7 @@
                 android:text="Wind"
                 android:textAlignment="center"
                 android:textColor="@color/white"
-                android:textSize="12sp" />
+                android:textSize="14sp" />
         </LinearLayout>
 
         <LinearLayout
@@ -133,7 +133,7 @@
                 android:text="-"
                 android:textAlignment="center"
                 android:textColor="@color/white"
-                android:textSize="16sp" />
+                android:textSize="18sp" />
 
             <TextView
                 android:id="@+id/currentTempTxt"
@@ -147,7 +147,7 @@
                 android:text="20"
                 android:textAlignment="center"
                 android:textColor="@color/white"
-                android:textSize="76dp" />
+                android:textSize="80dp" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -173,7 +173,7 @@
                     android:shadowRadius="3"
                     android:text="0"
                     android:textColor="@color/white"
-                    android:textSize="18sp" />
+                    android:textSize="20sp" />
 
                 <TextView
                     android:id="@+id/minTempTxt"
@@ -185,7 +185,7 @@
                     android:shadowRadius="3"
                     android:text="0"
                     android:textColor="@color/white"
-                    android:textSize="18sp"
+                    android:textSize="20sp"
 
                     />
 
@@ -238,7 +238,7 @@
                 android:text="Humility"
                 android:textAlignment="center"
                 android:textColor="@color/white"
-                android:textSize="12sp" />
+                android:textSize="14sp" />
         </LinearLayout>
 
     </LinearLayout>
@@ -247,18 +247,15 @@
     <eightbitlab.com.blurview.BlurView
         android:id="@+id/blurView"
         android:layout_width="match_parent"
-        android:layout_height="200dp"
+        android:layout_height="190dp"
         android:layout_marginStart="24dp"
         android:layout_marginEnd="24dp"
-        android:layout_marginBottom="90dp"
+        android:layout_marginBottom="110dp"
         android:background="@drawable/forecast_bg"
         android:visibility="gone"
         app:blurOverlayColor="#10ffffff"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
         tools:visibility="visible">
-
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
@@ -266,16 +263,15 @@
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/forecastView"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
                 android:visibility="gone"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintHorizontal_bias="0.0"
-                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintVertical_bias="0.0"
-                tools:visibility="visible" />
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                tools:visibility="visible"
+                tools:listitem="@layout/forecast_viewholder"/>
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
